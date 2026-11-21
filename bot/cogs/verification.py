@@ -12,7 +12,7 @@ from discord import app_commands
 from discord.ext import commands
 
 import config
-from bot.views.captcha_modal_view import CaptchaInteractionView
+from bot.views.captcha_modal_view import CaptchaInteractionView, build_challenge_embed
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -114,21 +114,7 @@ class VerificationCog(commands.Cog, name="Verification"):
             style_name = session.style_name
 
         file = discord.File(io.BytesIO(raw_bytes), filename="captcha.png")
-        embed = discord.Embed(
-            description=(
-                "Follow the instruction printed inside the image, then enter the five "
-                "requested digits in normal reading order (top left to right, then bottom left to right)."
-            ),
-            color=config.COLOR_PRIMARY,
-        )
-        if interaction.guild:
-            embed.set_author(
-                name=interaction.guild.name,
-                icon_url=interaction.guild.icon.url if interaction.guild.icon else None,
-            )
-            if interaction.guild.icon:
-                embed.set_thumbnail(url=interaction.guild.icon.url)
-        embed.set_image(url="attachment://captcha.png")
+        embed = build_challenge_embed(interaction.guild, style_name)
 
         interaction_view = CaptchaInteractionView(bot=self.bot, guild_config=guild_cfg)
         await interaction.followup.send(embed=embed, file=file, view=interaction_view, ephemeral=True)

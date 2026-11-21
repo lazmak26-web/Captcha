@@ -12,7 +12,7 @@ import discord
 from discord import ui
 
 import config
-from .captcha_modal_view import CaptchaInteractionView
+from .captcha_modal_view import CaptchaInteractionView, build_challenge_embed
 
 if TYPE_CHECKING:
     from bot.client import LeakersCaptchaBot
@@ -105,21 +105,7 @@ class VerifyButtonView(ui.View):
             style_name = session.style_name
 
         file = discord.File(io.BytesIO(raw_bytes), filename="captcha.png")
-        embed = discord.Embed(
-            description=(
-                "Follow the instruction printed inside the image, then enter the five "
-                "requested digits in normal reading order (top left to right, then bottom left to right)."
-            ),
-            color=config.COLOR_PRIMARY,
-        )
-        if interaction.guild:
-            embed.set_author(
-                name=interaction.guild.name,
-                icon_url=interaction.guild.icon.url if interaction.guild.icon else None,
-            )
-            if interaction.guild.icon:
-                embed.set_thumbnail(url=interaction.guild.icon.url)
-        embed.set_image(url="attachment://captcha.png")
+        embed = build_challenge_embed(interaction.guild, style_name)
 
         interaction_view = CaptchaInteractionView(bot=self.bot, guild_config=guild_cfg)
         await interaction.response.send_message(embed=embed, file=file, view=interaction_view, ephemeral=True)

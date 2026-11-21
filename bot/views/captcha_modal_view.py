@@ -20,12 +20,33 @@ if TYPE_CHECKING:
 logger = logging.getLogger("leakers_captcha.views.modal")
 
 
+def build_challenge_embed(guild: Optional[discord.Guild], style_name: str) -> discord.Embed:
+    """Builds the challenge embed with instructions matching the CAPTCHA style."""
+    if style_name == "MarketShapes":
+        description = (
+            "Follow the instruction printed inside the image, then enter the five "
+            "requested digits in normal reading order (top left to right, then bottom left to right)."
+        )
+    else:
+        description = (
+            "Enter the characters shown in the image, then click **Submit Code**. "
+            "The code is not case-sensitive."
+        )
+    embed = discord.Embed(description=description, color=config.COLOR_PRIMARY)
+    if guild:
+        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
+    embed.set_image(url="attachment://captcha.png")
+    return embed
+
+
 class CaptchaCodeModal(ui.Modal, title="Leakers$ Security Verification"):
     """Modal prompt asking the user to submit the characters from the image."""
 
     captcha_input = ui.TextInput(
-        label="Enter digits following the image instruction",
-        placeholder="e.g. 72946",
+        label="Enter the code from the image",
+        placeholder="e.g. 72946 or K7PX3M",
         min_length=2,
         max_length=12,
         required=True,
@@ -65,6 +86,9 @@ class CaptchaCodeModal(ui.Modal, title="Leakers$ Security Verification"):
             submission=submitted_code,
         )
 
+        # Acknowledge within Discord's 3-second window before doing slow work
+        await interaction.response.defer()
+
         if is_correct:
             # Grant verified role
             verified_role = interaction.guild.get_role(self.guild_config.verified_role_id or 0)
@@ -75,10 +99,12 @@ class CaptchaCodeModal(ui.Modal, title="Leakers$ Security Verification"):
                     await interaction.user.add_roles(verified_role, reason="Leakers$ CAPTCHA: Verification Passed")
                 if unverified_role and unverified_role in interaction.user.roles:
                     await interaction.user.remove_roles(unverified_role, reason="Leakers$ CAPTCHA: Verification Passed")
-            except discord.Forbidden:
-                logger.error("Missing permissions to modify roles for member %s in %s", user_id, guild_id)
-                await interaction.response.send_message(
-                    "Verification passed, but the bot lacks permission to manage roles. Please notify a server administrator.",
+            except discord.HTTPException as exc:
+                logger.error("Could not modify roles for member %s in %s: %s", user_id, guild_id, exc)
+                await interaction.followup.send(
+                    "Verification passed, but the bot could not update your roles. "
+                    "Please ask a server administrator to check that the bot has **Manage Roles** "
+                    "and that its role is above the verified role.",
                     ephemeral=True,
                 )
                 return
@@ -114,7 +140,7 @@ class CaptchaCodeModal(ui.Modal, title="Leakers$ Security Verification"):
                 description=f"Congratulations {interaction.user.mention}! You have been successfully verified and granted access.",
                 color=config.COLOR_SUCCESS,
             )
-            await interaction.response.edit_message(embed=success_embed, view=None, attachments=[])
+            await interaction.edit_original_response(embed=success_embed, view=None, attachments=[])
 
         else:
             # Failed attempt
@@ -137,7 +163,7 @@ class CaptchaCodeModal(ui.Modal, title="Leakers$ Security Verification"):
                     ),
                     color=config.COLOR_DANGER,
                 )
-                await interaction.response.edit_message(embed=fail_embed, view=None, attachments=[])
+                await interaction.edit_original_response(embed=fail_embed, view=None, attachments=[])
             else:
                 # Automatically generate a fresh challenge image on incorrect submission
                 captcha_res = await self.bot.captcha_generator.create_captcha(style_name=self.guild_config.captcha_style)
@@ -150,24 +176,10 @@ class CaptchaCodeModal(ui.Modal, title="Leakers$ Security Verification"):
                     active_session.image_bytes = captcha_res.image_bytes
 
                 file = discord.File(io.BytesIO(captcha_res.image_bytes), filename="captcha.png")
-                embed = discord.Embed(
-                    description=(
-                        "Follow the instruction printed inside the image, then enter the five "
-                        "requested digits in normal reading order (top left to right, then bottom left to right)."
-                    ),
-                    color=config.COLOR_PRIMARY,
-                )
-                if interaction.guild:
-                    embed.set_author(
-                        name=interaction.guild.name,
-                        icon_url=interaction.guild.icon.url if interaction.guild.icon else None,
-                    )
-                    if interaction.guild.icon:
-                        embed.set_thumbnail(url=interaction.guild.icon.url)
-                embed.set_image(url="attachment://captcha.png")
+                embed = build_challenge_embed(interaction.guild, captcha_res.style_name)
 
                 interaction_view = CaptchaInteractionView(bot=self.bot, guild_config=self.guild_config)
-                await interaction.response.edit_message(embed=embed, attachments=[file], view=interaction_view)
+                await interaction.edit_original_response(embed=embed, attachments=[file], view=interaction_view)
                 await interaction.followup.send(
                     f"⚠️ **Incorrect answer.** A new CAPTCHA image has been generated ({attempts_left} attempt{'s' if attempts_left != 1 else ''} remaining).\n"
                     f"Click **Submit Code** below to try again.",
