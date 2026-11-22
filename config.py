@@ -60,6 +60,15 @@ CAPTCHA_IMAGE_HEIGHT: Final[int] = 120
 # Character Set for Challenge Generation (avoiding ambiguous characters like 0, O, 1, I, l)
 CHARSET: Final[str] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
+# Official Website URL
+WEBSITE_URL: Final[str] = os.getenv("WEBSITE_URL", "https://leak3rs.xyz/").strip()
+
+# Allowed Channels where bot commands and interactions are active
+ALLOWED_CHANNEL_IDS: Final[tuple[int, ...]] = (
+    1572920165740585110,  # #verify
+    1573496629250621520,  # #verify-logs
+)
+
 # Discord UI Theme Colors (Hex values)
 COLOR_PRIMARY: Final[int] = 0x1A1A1A    # Dark Grey (#1A1A1A)
 COLOR_SUCCESS: Final[int] = 0x57F287    # Green

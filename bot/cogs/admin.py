@@ -20,6 +20,60 @@ if TYPE_CHECKING:
 logger = logging.getLogger("leakers_captcha.cogs.admin")
 
 
+class SettingsView(discord.ui.View):
+    """Interactive view for the /settings command inspired by VoiceMaster buttons."""
+
+    def __init__(self, bot: LeakersCaptchaBot, guild_id: int) -> None:
+        super().__init__(timeout=180)
+        self.bot = bot
+        self.guild_id = guild_id
+        website_emoji = discord.utils.get(bot.emojis, name="world_www") or discord.PartialEmoji(name="world_www", id=1573710974043684915)
+        self.add_item(
+            discord.ui.Button(
+                label="Dashboard",
+                style=discord.ButtonStyle.link,
+                url=config.WEBSITE_URL,
+                emoji=website_emoji,
+            )
+        )
+
+    @discord.ui.button(
+        label="Load Settings",
+        style=discord.ButtonStyle.primary,
+        emoji=discord.PartialEmoji(name="custom_settings", id=1573719194288132216),
+        custom_id="leakers_captcha:reload_settings_btn",
+    )
+    async def reload_settings_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Reloads and updates the guild settings embed."""
+        if interaction.guild is None or interaction.guild.id != self.guild_id:
+            await interaction.response.send_message("This settings view is for another server.", ephemeral=True)
+            return
+
+        cfg = await self.bot.db.get_guild_config(self.guild_id)
+        status_embed = discord.Embed(
+            title="<:custom_settings:1573719194288132216> Leakers$ CAPTCHA Guild Settings",
+            description="Configuration parameters reloaded from database:",
+            color=config.COLOR_PRIMARY,
+        )
+
+        chan_mention = f"<#{cfg.verification_channel_id}>" if cfg.verification_channel_id else "*Not Configured*"
+        role_mention = f"<@&{cfg.verified_role_id}>" if cfg.verified_role_id else "*Not Configured*"
+        unver_mention = f"<@&{cfg.unverified_role_id}>" if cfg.unverified_role_id else "*None*"
+        log_mention = f"<#{cfg.log_channel_id}>" if cfg.log_channel_id else "*None*"
+
+        status_embed.add_field(name="Verification Channel", value=chan_mention, inline=True)
+        status_embed.add_field(name="Verified Role", value=role_mention, inline=True)
+        status_embed.add_field(name="Unverified Role", value=unver_mention, inline=True)
+        status_embed.add_field(name="Audit Log Channel", value=log_mention, inline=True)
+        status_embed.add_field(name="CAPTCHA Style", value=f"`{cfg.captcha_style}`", inline=True)
+        status_embed.add_field(name="Expiration Window", value=f"`{cfg.expiration_seconds}s`", inline=True)
+        status_embed.add_field(name="Max Attempts Allowed", value=f"`{cfg.max_attempts}`", inline=True)
+        status_embed.add_field(name="Penalty Cooldown", value=f"`{cfg.cooldown_seconds}s`", inline=True)
+        status_embed.set_footer(text="Run /setup to change channels or roles.")
+
+        await interaction.response.edit_message(embed=status_embed, view=self)
+
+
 class AdminCog(commands.Cog, name="Admin"):
     """Server management commands for configuring verification channels and rules."""
 
@@ -82,10 +136,11 @@ class AdminCog(commands.Cog, name="Admin"):
         await self.bot.db.save_guild_config(cfg)
 
         # Dispatch the persistent verification message into the designated channel
+        logo_emoji = discord.utils.get(self.bot.emojis, name="leakers_logo") or discord.PartialEmoji(name="leakers_logo", id=1573738656685101286)
         panel_embed = discord.Embed(
-            title="Server Verification Required",
+            title="<:custom_settings:1573719194288132216> Server Verification Required",
             description=(
-                f"Welcome to **{guild.name}**!\n\n"
+                f"Welcome to **{guild.name}**! {logo_emoji}\n\n"
                 "To protect our community from automated spam and bot accounts, you must verify your identity.\n\n"
                 "**Instructions:**\n"
                 "1. Click the green **Verify** button below.\n"
@@ -183,7 +238,7 @@ class AdminCog(commands.Cog, name="Admin"):
             await self.bot.db.save_guild_config(cfg)
 
         status_embed = discord.Embed(
-            title="⚙️ Leakers$ CAPTCHA Guild Settings",
+            title="<:custom_settings:1573719194288132216> Leakers$ CAPTCHA Guild Settings",
             description="\n".join(updates) if updates else "Current configuration parameters:",
             color=config.COLOR_PRIMARY,
         )
@@ -203,7 +258,8 @@ class AdminCog(commands.Cog, name="Admin"):
         status_embed.add_field(name="Penalty Cooldown", value=f"`{cfg.cooldown_seconds}s`", inline=True)
         status_embed.set_footer(text="Run /setup to change channels or roles.")
 
-        await interaction.response.send_message(embed=status_embed, ephemeral=True)
+        view = SettingsView(self.bot, interaction.guild.id)
+        await interaction.response.send_message(embed=status_embed, view=view, ephemeral=True)
 
 
 async def setup(bot: LeakersCaptchaBot) -> None:
