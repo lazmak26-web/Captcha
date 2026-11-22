@@ -29,16 +29,34 @@ class VerifyButtonView(ui.View):
     def __init__(self, bot: LeakersCaptchaBot) -> None:
         super().__init__(timeout=None)
         self.bot = bot
+        website_emoji = discord.utils.get(bot.emojis, name="world_www") or discord.PartialEmoji(name="world_www", id=1573710974043684915)
+        self.add_item(
+            discord.ui.Button(
+                label="Website",
+                style=discord.ButtonStyle.link,
+                url=config.WEBSITE_URL,
+                emoji=website_emoji,
+            )
+        )
 
     @ui.button(
         label="Verify",
         style=discord.ButtonStyle.success,
+        emoji=discord.PartialEmoji(name="circle_check", id=1573712617585909791),
         custom_id="leakers_captcha:verify_btn",
     )
     async def verify_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         """Handles member interaction to start the CAPTCHA challenge."""
         if interaction.guild is None or not isinstance(interaction.user, discord.Member):
             await interaction.response.send_message("Verification is only available within servers.", ephemeral=True)
+            return
+
+        if interaction.channel_id not in config.ALLOWED_CHANNEL_IDS:
+            allowed_str = ", ".join(f"<#{cid}>" for cid in config.ALLOWED_CHANNEL_IDS)
+            await interaction.response.send_message(
+                f"❌ Verification is restricted to designated channels: {allowed_str}.",
+                ephemeral=True,
+            )
             return
 
         guild_id = interaction.guild.id

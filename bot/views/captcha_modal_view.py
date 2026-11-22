@@ -183,13 +183,21 @@ class CaptchaInteractionView(ui.View):
         self.bot = bot
         self.guild_config = guild_config
 
-    @ui.button(label="Submit Code", style=discord.ButtonStyle.success)
+    @ui.button(
+        label="Submit Code",
+        emoji=discord.PartialEmoji(name="custom_upload", id=1573719195932299389),
+        style=discord.ButtonStyle.success,
+    )
     async def submit_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         """Opens modal to input the code."""
         modal = CaptchaCodeModal(bot=self.bot, guild_config=self.guild_config)
         await interaction.response.send_modal(modal)
 
-    @ui.button(label="Cancel", style=discord.ButtonStyle.danger)
+    @ui.button(
+        label="Cancel",
+        emoji=discord.PartialEmoji(name="cross_white", id=1573715089347973322),
+        style=discord.ButtonStyle.danger,
+    )
     async def cancel_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         """Aborts current session and dismisses view."""
         if interaction.guild:

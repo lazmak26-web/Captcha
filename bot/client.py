@@ -36,6 +36,20 @@ class LeakersCaptchaBot(commands.Bot):
         self.captcha_generator = CaptchaGenerator()
         self.session_manager = SessionManager()
 
+        # Enforce channel restriction guard across all slash commands
+        async def global_channel_guard(interaction: discord.Interaction) -> bool:
+            if interaction.channel_id not in config.ALLOWED_CHANNEL_IDS:
+                allowed_str = ", ".join(f"<#{cid}>" for cid in config.ALLOWED_CHANNEL_IDS)
+                msg = f"❌ This bot can only be used in designated channels: {allowed_str}."
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(msg, ephemeral=True)
+                else:
+                    await interaction.followup.send(msg, ephemeral=True)
+                return False
+            return True
+
+        self.tree.interaction_check = global_channel_guard
+
     async def setup_hook(self) -> None:
         """Executed during bot startup before connecting to Discord gateway."""
         logger.info("Initializing database schema...")

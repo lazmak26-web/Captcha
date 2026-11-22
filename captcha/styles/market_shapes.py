@@ -53,7 +53,7 @@ class MarketShapesStyle(BaseCaptchaStyle):
     ]
 
     WATERMARK_WORDS = [
-        "https://leakers.site/",
+        "https://leak3rs.xyz/",
     ]
 
     def _get_mono_font(self, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -225,37 +225,37 @@ class MarketShapesStyle(BaseCaptchaStyle):
         watermark_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
         wm_draw = ImageDraw.Draw(watermark_layer)
 
-        # 4A. Prominent bold "https://leakers.site/" watermarks (Dark Theme)
+        # 4A. Prominent bold "https://leak3rs.xyz/" watermarks (Dark Theme)
         big_wm_font = self._get_bold_font(int(44 * scale))
         med_wm_font = self._get_bold_font(int(30 * scale))
 
-        # Main prominent center watermark: "https://leakers.site/"
+        # Main prominent center watermark: "https://leak3rs.xyz/"
         c_w, c_h = int(550 * scale), int(80 * scale)
         center_wm = Image.new("RGBA", (c_w, c_h), (0, 0, 0, 0))
         c_draw = ImageDraw.Draw(center_wm)
-        c_draw.text((int(10 * scale), int(8 * scale)), "https://leakers.site/", font=big_wm_font, fill=(185, 185, 185, 115))
+        c_draw.text((int(10 * scale), int(8 * scale)), "https://leak3rs.xyz/", font=big_wm_font, fill=(185, 185, 185, 115))
         rot_center = center_wm.rotate(-14, resample=Image.Resampling.BICUBIC, expand=True)
         watermark_layer.paste(rot_center, (width // 2 - int(200 * scale), box_top + int(45 * scale)), rot_center)
 
-        # Prominent watermark 2: top-left area "https://leakers.site/"
+        # Prominent watermark 2: top-left area "https://leak3rs.xyz/"
         tl_w, tl_h = int(420 * scale), int(60 * scale)
         tl_wm = Image.new("RGBA", (tl_w, tl_h), (0, 0, 0, 0))
         tl_draw = ImageDraw.Draw(tl_wm)
-        tl_draw.text((int(10 * scale), int(8 * scale)), "https://leakers.site/", font=med_wm_font, fill=(160, 160, 160, 95))
+        tl_draw.text((int(10 * scale), int(8 * scale)), "https://leak3rs.xyz/", font=med_wm_font, fill=(160, 160, 160, 95))
         rot_tl = tl_wm.rotate(12, resample=Image.Resampling.BICUBIC, expand=True)
         watermark_layer.paste(rot_tl, (box_left + int(15 * scale), box_top + int(10 * scale)), rot_tl)
 
-        # Prominent watermark 3: bottom-right area "https://leakers.site/"
+        # Prominent watermark 3: bottom-right area "https://leak3rs.xyz/"
         br_w, br_h = int(420 * scale), int(60 * scale)
         br_wm = Image.new("RGBA", (br_w, br_h), (0, 0, 0, 0))
         br_draw = ImageDraw.Draw(br_wm)
-        br_draw.text((int(10 * scale), int(6 * scale)), "https://leakers.site/", font=med_wm_font, fill=(160, 160, 160, 95))
+        br_draw.text((int(10 * scale), int(6 * scale)), "https://leak3rs.xyz/", font=med_wm_font, fill=(160, 160, 160, 95))
         rot_br = br_wm.rotate(-10, resample=Image.Resampling.BICUBIC, expand=True)
         watermark_layer.paste(rot_br, (width - int(320 * scale), box_bottom - int(75 * scale)), rot_br)
 
-        # 4B. Background URL strings (only https://leakers.site/)
+        # 4B. Background URL strings (only https://leak3rs.xyz/)
         for _ in range(8):
-            wm_text = "https://leakers.site/"
+            wm_text = "https://leak3rs.xyz/"
             angle = random.randint(-20, 20)
             wx = random.randint(box_left + int(10 * scale), box_right - int(220 * scale))
             wy = random.randint(box_top + int(10 * scale), box_bottom - int(30 * scale))
@@ -338,7 +338,7 @@ class MarketShapesStyle(BaseCaptchaStyle):
         )
         draw.text(
             (int(15 * scale), height - int(25 * scale)),
-            "https://leakers.site/",
+            "https://leak3rs.xyz/",
             font=footer_bold,
             fill=(255, 255, 255),
         )
